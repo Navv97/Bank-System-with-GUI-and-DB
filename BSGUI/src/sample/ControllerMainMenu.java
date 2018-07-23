@@ -89,5 +89,6 @@ public class ControllerMainMenu {
     }
 
     public void quitAction(ActionEvent actionEvent) {
+        System.exit(1);
     }
 }

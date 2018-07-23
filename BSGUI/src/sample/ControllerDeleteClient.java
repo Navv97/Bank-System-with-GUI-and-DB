@@ -9,28 +9,27 @@ import javafx.scene.control.*;
 import javafx.util.Callback;
 
 import java.io.IOException;
-import java.sql.*;
-import java.util.InputMismatchException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-public class ControllerAddFunds {
+public class ControllerDeleteClient {
 
-    public ChangeScreens changeScreensObject = new ChangeScreens();
-    public Button ProceedButton;
     public Button CancelButton;
-    public TextField EnterClientID_box;
-    public TextField EnterAmountOfMoney_box;
-    public Button loadButton;
+    public Button ProceedButton;
+    public TextField ClientToDelete_box;
+    public ChangeScreens changeScreensObject = new ChangeScreens();
     public TableView tableView;
+    public Button loadButton;
     public Label wrongInputDataID;
-    public Label wrongInputDataMoney;
     private ObservableList<ObservableList> data;
     public DatabaseConnection databaseConnectionObject = new DatabaseConnection();
 
     public void cancelButtonAction(ActionEvent actionEvent) {
         System.out.println("CancelButton");
         try {
-            EnterClientID_box.setText("");
-            EnterAmountOfMoney_box.setText("");
+            ClientToDelete_box.setText("");
             String string = "MainMenu.fxml";
             changeScreensObject.changeScreens(actionEvent,string);
         }catch (IOException e){
@@ -40,53 +39,47 @@ public class ControllerAddFunds {
 
     public void proceedButtonAction(ActionEvent actionEvent) {
         System.out.println("AddFundButton");
+        boolean flagID;
         try {
             ClientAvailabilty clientAvailabilty = new ClientAvailabilty();
             DatabaseConnection databaseConnection = new DatabaseConnection();
-            Transactions transactions = new Transactions();
-            RoundDownMoney roundDownMoneyObject = new RoundDownMoney();
             Connection connection = databaseConnection.connectDatabase();
-            boolean flagID, flagMoney;
             int clientID = 0;
             try{
-                clientID = Integer.parseInt(EnterClientID_box.getText());
-                if(clientAvailabilty.checkClientAvailability(connection, clientID) == 0 ){
-                    EnterClientID_box.setText("");
+                clientID = Integer.parseInt(ClientToDelete_box.getText());
+                if(clientAvailabilty.checkClientAvailability(connection, clientID) == 0){
                     wrongInputDataID.setVisible(true);
+                    ClientToDelete_box.setText("");
                     flagID = false;
                 }else {
                     wrongInputDataID.setVisible(false);
                     flagID = true;
                 }
             }catch (NumberFormatException e){
-                EnterClientID_box.setText("");
                 wrongInputDataID.setVisible(true);
+                ClientToDelete_box.setText("");
                 flagID = false;
             }
-            double amountOfMoney = 0;
-            try{
-                amountOfMoney = roundDownMoneyObject.roundTwoDecimal(Double.parseDouble(EnterAmountOfMoney_box.getText()));
-                if(amountOfMoney < 0){
-                    EnterAmountOfMoney_box.setText("");
-                    wrongInputDataMoney.setVisible(true);
-                    flagMoney = false;
-                }else {
-                    wrongInputDataMoney.setVisible(false);
-                    flagMoney = true;
-                }
-            }catch (NumberFormatException e){
-                EnterAmountOfMoney_box.setText("");
-                wrongInputDataMoney.setVisible(true);
-                flagMoney = false;
-            }
-            if(flagID && flagMoney){
-                System.out.println(clientID + " " + amountOfMoney);
+            if(flagID) {
                 connection = databaseConnection.connectDatabase();
-                transactions.addFunds(clientID,amountOfMoney,connection);
+                deleteClient(connection,clientID);
                 String string = "MainMenu.fxml";
-                changeScreensObject.changeScreens(actionEvent,string);
+                changeScreensObject.changeScreens(actionEvent, string);
             }
         }catch (IOException e){
+
+        }
+    }
+
+    public void deleteClient(Connection connection, int clientID){
+        try{
+            String deletePersonQuery = "DELETE FROM [Person] WHERE clientID = " + clientID;
+            String deleteClientQuery = "DELETE FROM [Bank Clients] WHERE clientID = " + clientID;
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(deleteClientQuery);
+            statement.executeUpdate(deletePersonQuery);
+            connection.close();
+        }catch(SQLException e){
 
         }
     }
